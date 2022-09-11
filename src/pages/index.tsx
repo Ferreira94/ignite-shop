@@ -1,14 +1,15 @@
 import { GetServerSideProps } from "next";
+import Link from "next/link";
 import Head from "next/head";
 import Image from "next/future/image";
 import Stripe from "stripe";
 import { useKeenSlider } from "keen-slider/react";
+import "keen-slider/keen-slider.min.css";
 
 import { stripe } from "../lib/stripe";
+import Header from "../components/Header";
 
 import { HomeContainer, Product } from "../styles/pages/home";
-import "keen-slider/keen-slider.min.css";
-import Link from "next/link";
 
 interface IProductsProps {
   products: {
@@ -32,6 +33,8 @@ export default function Home({ products }: IProductsProps) {
       <Head>
         <title>Home | Ignite Shop</title>
       </Head>
+
+      <Header />
 
       <HomeContainer ref={sliderRef} className="keen-slider">
         {products.map((item) => (

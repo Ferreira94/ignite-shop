@@ -1,20 +1,37 @@
-import Link from "next/link";
-import { ImageContainer, SuccessContainer } from "../styles/pages/success";
+import { useState } from "react";
 import { GetServerSideProps } from "next";
-import { stripe } from "../lib/stripe";
-import Stripe from "stripe";
-import Image from "next/image";
+import Link from "next/link";
 import Head from "next/head";
+import Image from "next/future/image";
+import { useShoppingCart } from "use-shopping-cart";
+import { CartEntry } from "use-shopping-cart/core";
+
+import logoImg from "../assets/Logo.svg";
+
+import { stripe } from "../lib/stripe";
+
+import { ImageContainer, SuccessContainer } from "../styles/pages/success";
 
 interface ISuccessProps {
   customerName: string;
-  product: {
-    name: string;
-    imageUrl: string;
-  };
 }
 
-export default function Success({ customerName, product }: ISuccessProps) {
+export default function Success({ customerName }: ISuccessProps) {
+  const { clearCart, cartDetails, cartCount } = useShoppingCart();
+  const [isLoading, setIsLoading] = useState(false);
+  const items: CartEntry[] = [];
+
+  for (const id in cartDetails) {
+    const item = cartDetails[id];
+    items.push(item);
+  }
+
+  function handleClearCart() {
+    setIsLoading(true);
+
+    clearCart();
+  }
+
   return (
     <>
       <Head>
@@ -23,19 +40,34 @@ export default function Success({ customerName, product }: ISuccessProps) {
       </Head>
 
       <SuccessContainer>
-        <h1>Compra efetuata com sucesso!</h1>
+        {!isLoading ? (
+          <>
+            <Link href="/" onClick={handleClearCart}>
+              <Image src={logoImg} alt="" />
+            </Link>
 
-        <ImageContainer>
-          <Image src={product.imageUrl} width={120} height={110} alt="" />
-        </ImageContainer>
+            <h1>Compra efetuata com sucesso!</h1>
 
-        <p>
-          Uhuul <strong>{customerName}</strong>, sua
-          <strong> {product.name} </strong>
-          já está a caminho de sua casa
-        </p>
+            <section>
+              {items.map((item) => (
+                <ImageContainer key={item.id}>
+                  <Image src={item.imageUrl} width={120} height={110} alt="" />
+                </ImageContainer>
+              ))}
+            </section>
 
-        <Link href="/">Voltar para o catálogo</Link>
+            <p>
+              Uhuul <strong>{customerName}</strong>, sua compra de {cartCount}{" "}
+              camisetas já está a caminho de sua casa!!!
+            </p>
+
+            <Link href="/" onClick={handleClearCart}>
+              Voltar para o catálogo
+            </Link>
+          </>
+        ) : (
+          <p>Carregando...</p>
+        )}
       </SuccessContainer>
     </>
   );
@@ -58,15 +90,10 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
   });
 
   const customerName = session.customer_details.name;
-  const product = session.line_items.data[0].price.product as Stripe.Product;
 
   return {
     props: {
       customerName,
-      product: {
-        name: product.name,
-        imageUrl: product.images[0],
-      },
     },
   };
 };
